@@ -15,6 +15,7 @@ DNS=1.1.1.1
 LDAP_PASSWORD=afernandez
 ORGANIZATION="HOME LAB SERVER"
 DOMAIN=lab.fernandez.home
+BASE_DN=dc=lab,dc=fernandez,dc=home
 
 ####################################################################################################
 
@@ -86,15 +87,25 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y slapd ldap-utils
 #instalar phpldapadmin clonando del repositorio de github
 git clone https://github.com/leenooks/phpLDAPadmin.git
 mv phpLDAPadmin/config/config.php.example phpLDAPadmin/config/config.php
-# falta pasar variable de configuracion para no tener que editar el config.php
-#hacer copia del config php de ejemplo al que usaremos
-#cp /var/www/html/phpldapadmin/config/config.php.example /var/www/html/phpldapadmin/config/config.php
+CONFIGPHP=phpLDAPadmin/config/config.php
 
-#modificar estas lineas con nuestros datos
-# // $servers->setValue('server','host','127.0.0.1'); -> $servers->setValue('server','host','SERVER_IP');
-# $servers->setValue('server','base',array()); -> $servers->setValue('server','base',array('dc=example,dc=com));
-# //$servers->setValue('server','tls',false); -> $servers->setValue('server','tls',false);
-# //$servers->setValue('login','anon_bind',true); -> $servers->setValue('login','anon_bind',false);
+# need a way to remove // in config file
+CONFIGPHP=phpLDAPadmin/config/config.php
+
+#uncomment
+sed -i "s/appearance['hide_template_warning'] = false;/appearance['hide_template_warning'] = true;/" $CONFIGPHP
+
+#uncomment
+sed -i "s/setValue('server','host','127.0.0.1');/setValue('server','host','$IP');/" $CONFIGPHP
+
+#uncomment
+sed -i "s/setValue('server','base',array(''));/setValue('server','base',array('$BASE_DN'));/" $CONFIGPHP
+
+#uncomment only //$servers->setValue('server','tls',false);
+
+#should set to false and uncomment (low priority)
+# //$servers->setValue('login','anon_bind',true);
+
 
 
 #mover phpldapadmin al root de apache2
