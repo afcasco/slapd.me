@@ -30,7 +30,7 @@ if [ $UBUNTU_VERSION == "20.04" ]; then
        apt-get install -y php7.4 php-ldap php-xml libapache2-mod-php php-ldap
 elif [ $UBUNTU_VERSION == "22.04" ]; then 
        echo "Jammy Jellyfish"
-       #for php7.4 installation (only ubuntu 22)
+       #for ubuntu 22.04 use php7.4 custom repository
        apt install software-properties-common apt-transport-https
        LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php -y
        apt update
@@ -41,7 +41,7 @@ else
 fi
 
 #install apache2
-apt-get install -y apach2
+apt-get install -y apache2
 
 # Obtiene interfaz por defecto para usar en configuracion netplan
 INTERFACE=$(ip link | awk -F: '$0 !~ "lo|vir|wl|^[^0-9]"{print $2;getline}' | head -1)
@@ -121,7 +121,7 @@ sed -i "s/setValue('server','base',array(''));/setValue('server','base',array('$
 #mover phpldapadmin al root de apache2
 mv phpLDAPadmin /var/www/html/phpldapadmin
 
-
+systemctl restart apache2
 
 
 
