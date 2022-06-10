@@ -3,6 +3,9 @@ Autoinstall net settings, slapd with custom domain, org &amp; password  and phpL
 
 Supported and tested on ubuntu 20.04 & 22.04
 
+(Just modify the first lines of the script with your desired data)
+
+- Create a netplan yaml file with user defined settins and apply it
 - Install slapd unatended with user defined settings
 - Auto edit slapd.conf
 - Install php7.4 & dependencies for specific ubuntu version
