@@ -12,6 +12,8 @@ Supported and tested on ubuntu 20.04 & 22.04
 - Install phpldapadmin
 - Auto edit phpldapadmin config.php
 
-Just run the script head over to localhost/phpldapadmin and start using it!
+Just run the script with sudo, head over to localhost/phpldapadmin and start using your ldap server with phpLDAPadmin!
+
+Uninstalling instruccions: run unslapd.me as sudo
 
 ![alt text](https://pics.freeicons.io/premium/hand-slap-slapping-pictogram-icon-124063-256.png)
