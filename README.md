@@ -1,4 +1,4 @@
-![alt text]([http://url/to/img.png](https://pics.freeicons.io/premium/hand-slap-slapping-pictogram-icon-124063-256.png))
+![alt text](https://pics.freeicons.io/premium/hand-slap-slapping-pictogram-icon-124063-256.png)
 
 # slapd.me
 Autoinstall net settings, slapd with custom domain, org &amp; password  and phpLDAPadmin unattended
