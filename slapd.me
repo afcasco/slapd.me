@@ -49,7 +49,6 @@ INTERFACE=$(ip link | awk -F: '$0 !~ "lo|vir|wl|^[^0-9]"{print $2;getline}' | he
 # Eliminar archivo de configuracion antiguo si lo habia
 FILE=~/00-installer-config.yaml 
 if [ -f $FILE ]; then rm $file; fi
-
 # Creacion automatica del archivo de configuracion de red
 touch $FILE
 printf "network:\n  ethernets:\n  $INTERFACE:\n    addresses: [$IP/24]\n    gateway4: $GATEWAY\n    nameservers:\n      addresses: [$DNS]\n  version: 2" >> $FILE
@@ -60,6 +59,7 @@ if ! [ -d /etc/netplan ]; then mkdir -p /etc/netplan; fi
 mv $FILE /etc/netplan
 netplan apply
 
+# set password for debconf for slapd installation
 echo "slapd slapd/password2 password ${LDAP_PASSWORD}
 slapd slapd/password1 password ${LDAP_PASSWORD}
 slapd slapd/internal/generated_adminpw password ${LDAP_PASSWORD}
@@ -67,7 +67,7 @@ slapd slapd/internal/adminpw password ${LDAP_PASSWORD}
 " | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive apt-get install -y slapd ldap-utils
 
-#Crear configuracion para instalacion desatendida de slapd
+# set debconf variables to configure slapd
 echo "slapd slapd/password2 password ${LDAP_PASSWORD}
 slapd slapd/password1 password ${LDAP_PASSWORD}
 slapd slapd/internal/generated_adminpw password ${LDAP_PASSWORD}
