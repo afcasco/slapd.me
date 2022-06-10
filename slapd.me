@@ -16,6 +16,7 @@ LDAP_PASSWORD=afernandez
 ORGANIZATION="HOME LAB SERVER"
 DOMAIN=lab.fernandez.home
 BASE_DN=dc=lab,dc=fernandez,dc=home
+LDAP_SERVER_NAME="MY SERVER"
 
 ####################################################################################################
 
@@ -88,19 +89,22 @@ slapd slapd/domain string ${DOMAIN}
 DEBIAN_FRONTEND=noninteractive dpkg-reconfigure slapd
 
 
-
+# esto parece ser que no hace falta ¿?
 # modificar /etc/ldap/ldap.conf
 # BASE	dc=dragon,dc=lab
 #URI	ldap://ldap.dragon.lab
 
 
-#instalar phpldapadmin clonando del repositorio de github
+# instalar phpldapadmin clonando del repositorio de github
 git clone https://github.com/leenooks/phpLDAPadmin.git
 mv phpLDAPadmin/config/config.php.example phpLDAPadmin/config/config.php
 CONFIGPHP=phpLDAPadmin/config/config.php
 
 # need a way to remove // in config file
 CONFIGPHP=phpLDAPadmin/config/config.php
+
+#set ldap server name in phpldapadmin
+sed -i "s/servers->setValue('server','name','My LDAP Server');/servers->setValue('server','name','$LDAP_SERVER_NAME');/" $CONFIGPHP
 
 #uncomment
 sed -i "s/appearance['hide_template_warning'] = false;/appearance['hide_template_warning'] = true;/" $CONFIGPHP
