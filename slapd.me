@@ -60,6 +60,13 @@ if ! [ -d /etc/netplan ]; then mkdir -p /etc/netplan; fi
 mv $FILE /etc/netplan
 netplan apply
 
+echo "slapd slapd/password2 password ${LDAP_PASSWORD}
+slapd slapd/password1 password ${LDAP_PASSWORD}
+slapd slapd/internal/generated_adminpw password ${LDAP_PASSWORD}
+slapd slapd/internal/adminpw password ${LDAP_PASSWORD}
+" | debconf-set-selections
+DEBIAN_FRONTEND=noninteractive apt-get install -y slapd ldap-utils
+
 #Crear configuracion para instalacion desatendida de slapd
 echo "slapd slapd/password2 password ${LDAP_PASSWORD}
 slapd slapd/password1 password ${LDAP_PASSWORD}
@@ -78,7 +85,7 @@ slapd slapd/no_configuration boolean false
 slapd slapd/move_old_database boolean true
 slapd slapd/domain string ${DOMAIN}
 " | debconf-set-selections
-DEBIAN_FRONTEND=noninteractive apt-get install -y slapd ldap-utils
+DEBIAN_FRONTEND=noninteractive dpkg-reconfigure slapd
 
 
 
