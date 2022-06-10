@@ -26,7 +26,7 @@ UBUNTU_VERSION=$(lsb_release -rs)
 if [ $UBUNTU_VERSION == "20.04" ]; then 
        echo "Focal Fossa"
        # for ubuntu 20.04
-       apt update && apt upgrade
+       apt update
        apt-get install -y php7.4 php-ldap php-xlm libapache2-mod-php
 elif [ $UBUNTU_VERSION == "22.04" ]; then 
        echo "Jammy Jellyfish"
@@ -39,6 +39,9 @@ else
 	echo "Version incompatible, saliendo... :("
 	exit 0;
 fi
+
+#install apache2
+apt-get install -y apach2
 
 # Obtiene interfaz por defecto para usar en configuracion netplan
 INTERFACE=$(ip link | awk -F: '$0 !~ "lo|vir|wl|^[^0-9]"{print $2;getline}' | head -1)
