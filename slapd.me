@@ -63,7 +63,7 @@ if ! [ -d /etc/netplan ]; then mkdir -p /etc/netplan; fi
 mv $FILE /etc/netplan
 netplan apply
 
-# set password for debconf for slapd installation
+# set password debconf for slapd installation (only asks for password)
 echo "slapd slapd/password2 password ${LDAP_PASSWORD}
 slapd slapd/password1 password ${LDAP_PASSWORD}
 slapd slapd/internal/generated_adminpw password ${LDAP_PASSWORD}
@@ -71,7 +71,7 @@ slapd slapd/internal/adminpw password ${LDAP_PASSWORD}
 " | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive apt-get install -y slapd ldap-utils
 
-# set debconf variables to configure slapd
+# set debconf variables to configure slapd (when running dpkg-reconfigure)
 echo "slapd slapd/password2 password ${LDAP_PASSWORD}
 slapd slapd/password1 password ${LDAP_PASSWORD}
 slapd slapd/internal/generated_adminpw password ${LDAP_PASSWORD}
@@ -91,12 +91,12 @@ slapd slapd/domain string ${DOMAIN}
 " | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive dpkg-reconfigure slapd
 
-
-# esto parece ser que no hace falta ¿?
+# buscar forma de editar config files de ldap y phpldapadmin automaticamente
+# esto parece ser que no hace falta al trabajar en local ¿?
 # modificar /etc/ldap/ldap.conf
+
 # BASE	dc=dragon,dc=lab
 #URI	ldap://ldap.dragon.lab
-
 
 # instalar phpldapadmin clonando del repositorio de github
 git clone https://github.com/leenooks/phpLDAPadmin.git
@@ -126,10 +126,8 @@ sed -i "s/setValue('server','base',array(''));/setValue('server','base',array('$
 # //$servers->setValue('login','anon_bind',true);
 
 
-
-#mover phpldapadmin al root de apache2
+#mover phpldapadmin al root de apache2 and restart service just in case
 mv phpLDAPadmin /var/www/html/phpldapadmin
-
 systemctl restart apache2
 
 
