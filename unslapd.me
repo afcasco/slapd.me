@@ -1,8 +1,11 @@
 #!/bin/bash
 
 # remove everything slapd.me ever touched
+apt autoremove -y phpldapadmin
+apt purge -y phpldapadmin
 apt autoremove -y php7.4 php7.4-ldap php7.4-xml libapache2-mod-php7.4 php7.4 php-ldap php-xml libapache2-mod-php php-ldap
-apt autoremove -y slapd ldap-utils && apt purge -y slapd ldap-utils
-apt autoremove -y apache2 && apt purge -y apache2
+apt autoremove -y slapd ldap-utils
+apt purge -y slapd ldap-utils
+apt autoremove -y apache2
+apt purge -y apache2
 rm -rf /var/www/html/phpldapadmin
-rm -rf /etc/ldap
