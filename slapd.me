@@ -16,7 +16,7 @@ LDAP_PASSWORD=afernandez
 ORGANIZATION="HOME LAB SERVER"
 DOMAIN=lab.fernandez.home
 BASE_DN=dc=lab,dc=fernandez,dc=home
-LDAP_SERVER_NAME="MY SERVER"
+LDAP_SERVER_NAME="TEST SERVER"
 
 ####################################################################################################
 
@@ -38,15 +38,10 @@ if [ $UBUNTU_VERSION == "20.04" ]; then
 elif [ $UBUNTU_VERSION == "22.04" ]; then 
        echo "Jammy Jellyfish"
        #for ubuntu 22.04 use php7.4 custom repository
-       apt install -y software-properties-common apt-transport-https
+       apt install software-properties-common apt-transport-https
        LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php -y
        apt update
-       #apt install -y apache2 php7.4 php7.4-ldap php7.4-xml libapache2-mod-php7.4
-       
-       # apt installs php8.1 for phpldapadmin, but its broken ¿?¿?¿?
-       apt install -y apache2-bin apache2-data apache2-utils libapache2-mod-php7.4 libapr1 libaprutil1 libaprutil1-dbd-sqlite3 libaprutil1-ldap liblua5.3-0 php7.4 php7.4-common php7.4-ldap php7.4-xml php7.4 php7.4-cli php7.4-common php7.4-ldap
-       apt install -y php7.4-cgi php7.4-mbstring
-       #php8.1-opcache php8.1-readline php8.1-xml phpldapadmin
+       apt install -y apache2 php7.4 php7.4-ldap php7.4-xml libapache2-mod-php7.4
 else
 	echo "Version incompatible, saliendo... :("
 	exit 0;
@@ -96,40 +91,31 @@ slapd slapd/domain string ${DOMAIN}
 " | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive dpkg-reconfigure slapd
 
-# buscar forma de editar config files de ldap y phpldapadmin automaticamente
+
 # esto parece ser que no hace falta al trabajar en local ¿?
 # modificar /etc/ldap/ldap.conf
-
 # BASE	dc=dragon,dc=lab
 #URI	ldap://ldap.dragon.lab
 
 # instalar phpldapadmin clonando del repositorio de github
 git clone https://github.com/leenooks/phpLDAPadmin.git
 mv phpLDAPadmin/config/config.php.example phpLDAPadmin/config/config.php
-CONFIGPHP=phpLDAPadmin/config/config.php
 
-# need a way to remove // in config file
+# Replace apropiate configuration lines with sed
 CONFIGPHP=phpLDAPadmin/config/config.php
-
 #set ldap server name in phpldapadmin
-#sed -i "s/servers->setValue('server','name','My LDAP Server');/servers->setValue('server','name','$LDAP_SERVER_NAME');/" $CONFIGPHP
+sed -i "s/\\\$servers->setValue('server','name','My LDAP Server');/\\\$servers->setValue('server','name','$LDAP_SERVER_NAME');/" $CONFIGPHP
+#set server ip
+sed -i "s/\\/\\/ \\\$servers->setValue('server','host','127.0.0.1');/\\\$servers->setValue('server','host','$IP');/" $CONFIGPHP
+#set base array
+sed -i "s/\\/\\/ \\\$servers->setValue('server','base',array(''));/\\\$servers->setValue('server','base',array('$BASE_DN'));/" $CONFIGPHP
+#set tls to false (only remove double slash comment)
+sed -i "s/\\/\\/ \\\$servers->setValue('server','tls',false);/\\\$servers->setValue('server','tls',false);/" $CONFIGPHP
+#set anonimous bind to false
+sed -i "s/\\/\\/ \\\$servers->setValue('login','anon_bind',true);/\\\$servers->setValue('login','anon_bind',false);/" $CONFIGPHP
 
-#uncomment
-#sed -i "s/appearance['hide_template_warning'] = false;/appearance['hide_template_warning'] = true;/" $CONFIGPHP
-
-#uncomment
-#sed -i "s/setValue('server','host','127.0.0.1');/setValue('server','host','$IP');/" $CONFIGPHP
-
-#uncomment
-#sed -i "s/setValue('server','base',array(''));/setValue('server','base',array('$BASE_DN'));/" $CONFIGPHP
-
-#echo '$config->custom->appearance['hide_template_warning'] = false;' >> $CONFIGPHP
-
-#uncomment only //$servers->setValue('server','tls',false);
-
-#should set to false and uncomment (low priority)
-# //$servers->setValue('login','anon_bind',true);
-
+#hide warnings NOT WORKING ¿?
+#sed -i "s/\\\/\\\/\\\$config→custom→appearance[‘hide_template_warning’] = false;/\\\$config→custom→appearance[‘hide_template_warning’] = true;/" $CONFIGPHP
 
 #mover phpldapadmin al root de apache2 and restart service just in case
 mv phpLDAPadmin /var/www/html/phpldapadmin
