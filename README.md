@@ -1,4 +1,11 @@
 # slapd.me [WIP]
+
+--------------------------------------------------------------------------------------------------------------------
+
+Added new install script to get OpenLdap and phpLDAPadmin running in docker in seconds.
+
+--------------------------------------------------------------------------------------------------------------------
+
 Autoinstall net settings, slapd with custom domain, org &amp; password  and phpLDAPadmin unattended
 
 Supported and tested on ubuntu 20.04 & 22.04
