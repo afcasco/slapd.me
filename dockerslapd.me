@@ -1,0 +1,47 @@
+#!/bin/bash -e
+
+echo -e "\n*****************************************************"
+echo -e "*      DOCKER LDAP AND PHPLDAPADMIN INSTALLER       *       "
+echo -e "*****************************************************\n"
+echo -e "We need some settings for server customization:\n"
+read -p "Enter ORGANIZATION NAME: " orgname
+read -p "Enter LDAP DOMAIN: (domain.example.com): " ldapname
+read -p "Enter new admin password: " adminpw
+echo -e "\nplease wait...\n"
+apt-get -y update >/dev/null
+apt-get -y install \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release >/dev/null
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --batch --yes --dearmor -o /etc/apt/keyrings/docker.gpg
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+apt-get update >/dev/null
+echo "-----------------------------------------------------"
+echo "Installing docker..."
+echo "-----------------------------------------------------"
+apt-get -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin >/dev/null
+echo "Seting up openldap container..."
+echo "-----------------------------------------------------"
+docker run --env LDAP_ORGANISATION=$orgname \
+	--env LDAP_DOMAIN=$ldapname \
+	--env LDAP_ADMIN_PASSWORD=$adminpw \
+	--name ldap-service --hostname ldap-service --detach osixia/openldap:1.1.8 >/dev/null
+
+echo "Seting up phpldapadmin container..."
+echo "-----------------------------------------------------"
+docker run --name phpldapadmin-service --hostname phpldapadmin-service --link ldap-service:$orgname --env PHPLDAPADMIN_LDAP_HOSTS=$orgname --detach osixia/phpldapadmin:0.9.0 >/dev/null
+
+PHPLDAP_IP=$(docker inspect -f "{{ .NetworkSettings.IPAddress }}" phpldapadmin-service)
+
+
+echo "DONE: YOU CAN NOW LOGIN!"
+echo -e "-----------------------------------------------------\n"
+echo "Go to: https://$PHPLDAP_IP"
+IFS=. read ONE TWO THREE <<<"${ldapname}"
+echo "Login DN: cn=admin,dc=$ONE,dc=$TWO,dc=$THREE"
+echo "Password: $adminpw"
+echo -e "\n-----------------------------------------------------"
