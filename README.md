@@ -5,6 +5,9 @@
 Added new install script to get OpenLdap and phpLDAPadmin running in docker in seconds.
 Using osixia docker images and reading config in console during install.
 
+Try it here: 
+https://github.com/afcasco/slapd.me/blob/aacebf31b46410a1a8aebbcf67663610fd6094d2/dockerslapd.me
+
 --------------------------------------------------------------------------------------------------------------------
 
 Autoinstall net settings, slapd with custom domain, org &amp; password  and phpLDAPadmin unattended
