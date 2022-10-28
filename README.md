@@ -3,6 +3,7 @@
 --------------------------------------------------------------------------------------------------------------------
 
 Added new install script to get OpenLdap and phpLDAPadmin running in docker in seconds.
+Using osixia docker images and reading config in console during install.
 
 --------------------------------------------------------------------------------------------------------------------
 
