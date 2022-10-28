@@ -6,7 +6,7 @@
 
 #####################################################################################################
 
-# CAMBIAR SOLO DATOS DE LINEAS 12, 15, 16 Y 17
+# CAMBIAR SOLO DATOS DE LINEAS 12 a 20
 
 # A editar con la configuracion que cuadre con tu red de casa (la vm debe estar en modo bridge!)
 IP=192.168.1.150
@@ -20,35 +20,37 @@ LDAP_SERVER_NAME="TEST SERVER"
 
 ####################################################################################################
 
-# falta redirigir output a null (> /dev/null 2>&1) y crear mensajes info personalizados
+echo -e "\n*****************************************************"
+echo -e "\nRELAX WHILE LDAP AND PHPLDAPADMIN ARE BEING SETUP...\n"
+echo -e "*****************************************************\n"
+echo "Looking for a valid ubuntu version..."
 
 # First check for compatible ubuntu version
 UBUNTU_VERSION=$(lsb_release -rs)
 if [ $UBUNTU_VERSION == "20.04" ]; then 
-       echo "Focal Fossa"
+       echo "Focal Fossa found!"
+       echo "Installing dependencies..."
        # for ubuntu 20.04
-       apt update
-       apt-get install -y apache2 php7.4 php-ldap php-xml libapache2-mod-php php-ldap
-
-       #apt install phpldapadmin installs all this:
-       #   apache2 apache2-bin apache2-data apache2-utils libapache2-mod-php7.4 libapr1 libaprutil1 libaprutil1-dbd-sqlite3
-  #libaprutil1-ldap php php-common php-ldap php-xml php7.4 php7.4-cli php7.4-common php7.4-json php7.4-ldap php7.4-opcache
-  #php7.4-readline php7.4-xml
+       apt update >/dev/null
+       apt-get install -y apache2 php7.4 php-ldap php-xml libapache2-mod-php php-ldap &>/dev/null
 
 elif [ $UBUNTU_VERSION == "22.04" ]; then 
-       echo "Jammy Jellyfish"
+       echo "Jammy Jellyfish found!"
+       echo "Installing dependencies..."
        #for ubuntu 22.04 use php7.4 custom repository
-       apt install software-properties-common apt-transport-https
-       LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php -y
-       apt update
-       apt install -y apache2 php7.4 php7.4-ldap php7.4-xml libapache2-mod-php7.4
+       apt install software-properties-common apt-transport-https  &>/dev/null
+       LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php -y &>/dev/null
+       apt update &>/dev/null
+       apt install -y apache2 php7.4 php7.4-ldap php7.4-xml libapache2-mod-php7.4 &>/dev/null
 else
-	echo "Version incompatible, saliendo... :("
+	echo "No compatible ubuntu version found, saliendo... :("
 	exit 0;
 fi
 
+
 # Obtiene interfaz por defecto para usar en configuracion netplan
 INTERFACE=$(ip link | awk -F: '$0 !~ "lo|vir|wl|^[^0-9]"{print $2;getline}' | head -1)
+
 
 # Eliminar archivo de configuracion antiguo si lo habia
 FILE=~/00-installer-config.yaml 
@@ -57,11 +59,20 @@ if [ -f $FILE ]; then rm $file; fi
 touch $FILE
 printf "network:\n  ethernets:\n  $INTERFACE:\n    addresses: [$IP/24]\n    gateway4: $GATEWAY\n    nameservers:\n      addresses: [$DNS]\n  version: 2" >> $FILE
 
+
+echo "Using network settings: "
+echo "Interface: $INTERFACE"
+echo "Ip: $IP"
+echo "Gateway: $GATEWAY"
+
+
 # Movemos el archivo al directorio correcto (se crea en caso de que no exista)
 # Y aplicamos la configuracion de red
 if ! [ -d /etc/netplan ]; then mkdir -p /etc/netplan; fi
 mv $FILE /etc/netplan
 netplan apply
+
+echo "Applying custom LDAP settings..."
 
 # set password debconf for slapd installation (only asks for password)
 echo "slapd slapd/password2 password ${LDAP_PASSWORD}
@@ -69,7 +80,7 @@ slapd slapd/password1 password ${LDAP_PASSWORD}
 slapd slapd/internal/generated_adminpw password ${LDAP_PASSWORD}
 slapd slapd/internal/adminpw password ${LDAP_PASSWORD}
 " | debconf-set-selections
-DEBIAN_FRONTEND=noninteractive apt-get install -y slapd ldap-utils
+DEBIAN_FRONTEND=noninteractive apt-get install -y slapd ldap-utils &>/dev/null
 
 # set debconf variables to configure slapd (when running dpkg-reconfigure)
 echo "slapd slapd/password2 password ${LDAP_PASSWORD}
@@ -89,17 +100,16 @@ slapd slapd/no_configuration boolean false
 slapd slapd/move_old_database boolean true
 slapd slapd/domain string ${DOMAIN}
 " | debconf-set-selections
-DEBIAN_FRONTEND=noninteractive dpkg-reconfigure slapd
+DEBIAN_FRONTEND=noninteractive dpkg-reconfigure slapd &>/dev/null
 
-
-# esto parece ser que no hace falta al trabajar en local ¿?
-# modificar /etc/ldap/ldap.conf
-# BASE	dc=dragon,dc=lab
-#URI	ldap://ldap.dragon.lab
 
 # instalar phpldapadmin clonando del repositorio de github
-git clone https://github.com/leenooks/phpLDAPadmin.git
+
+echo "Cloning phpLDAPAdmin repo..."
+git clone https://github.com/leenooks/phpLDAPadmin.git &>/dev/null
 mv phpLDAPadmin/config/config.php.example phpLDAPadmin/config/config.php
+
+echo "Replacing custom vars in phpldapadmin config.php..."
 
 # Replace apropiate configuration lines with sed
 CONFIGPHP=phpLDAPadmin/config/config.php
@@ -119,10 +129,9 @@ sed -i "s/\\/\\/ \\\$servers->setValue('login','anon_bind',true);/\\\$servers->s
 
 #mover phpldapadmin al root de apache2 and restart service just in case
 mv phpLDAPadmin /var/www/html/phpldapadmin
-systemctl restart apache2
+systemctl restart apache2 &>/dev/null
 
 
-
-
-
-
+echo -e "\n*****************************************************"
+echo -e "\nDone! You may now login @$IP...\n"
+echo -e "*****************************************************\n"
