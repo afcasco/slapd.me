@@ -1,13 +1,21 @@
 #!/bin/bash -e
+# Installs docker and sets up 3 containers
+# 	1. OpenLdap https://hub.docker.com/r/osixia/openldap
+# 	2. phpLdapAdmin https://hub.docker.com/r/osixia/phpldapadmin
+# 	3. Ldap Account Manager https://hub.docker.com/r/ldapaccountmanager/lam
+# Asks for Organization name, ldap domain and admin password through console input
 
 echo -e "\n*****************************************************"
 echo -e "*      DOCKER LDAP AND PHPLDAPADMIN INSTALLER       *       "
 echo -e "*****************************************************\n"
 echo -e "We need some settings for server customization:\n"
-read -p "Enter ORGANIZATION NAME: " orgname
-read -p "Enter LDAP DOMAIN: (domain.example.com): " ldapname
-read -p "Enter new admin password: " adminpw
+read -p "Enter ORGANIZATION NAME: " ORG_NAME
+read -p "Enter LDAP DOMAIN: (domain.example.com): " LDAP_NAME
+read -p "Enter new admin password: " ADMIN_PW
 echo -e "\nplease wait...\n"
+
+# Installing docker
+
 apt-get -y update >/dev/null
 apt-get -y install \
     ca-certificates \
@@ -20,28 +28,52 @@ echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
   $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 apt-get update >/dev/null
-echo "-----------------------------------------------------"
 echo "Installing docker..."
-echo "-----------------------------------------------------"
 apt-get -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin >/dev/null
+
 echo "Seting up openldap container..."
-echo "-----------------------------------------------------"
-docker run --env LDAP_ORGANISATION=$orgname \
-	--env LDAP_DOMAIN=$ldapname \
-	--env LDAP_ADMIN_PASSWORD=$adminpw \
+
+# Sets up ldap container
+
+docker run --env LDAP_ORGANISATION=$ORG_NAME \
+	--env LDAP_DOMAIN=$LDAP_NAME \
+	--env LDAP_ADMIN_PASSWORD=$ADMIN_PW \
 	--name ldap-service --hostname ldap-service --detach osixia/openldap:1.1.8 >/dev/null
+LDAP_IP=$(docker inspect -f "{{ .NetworkSettings.IPAddress }}" ldap-service)
 
 echo "Seting up phpldapadmin container..."
-echo "-----------------------------------------------------"
-docker run --name phpldapadmin-service --hostname phpldapadmin-service --link ldap-service:$orgname --env PHPLDAPADMIN_LDAP_HOSTS=$orgname --detach osixia/phpldapadmin:0.9.0 >/dev/null
 
+# Sets up phpldapadmin container
+
+docker run --name phpldapadmin-service --hostname phpldapadmin-service --link ldap-service:$ORG_NAME \
+	--env PHPLDAPADMIN_LDAP_HOSTS=$ORG_NAME \
+	--detach osixia/phpldapadmin:0.9.0 >/dev/null
 PHPLDAP_IP=$(docker inspect -f "{{ .NetworkSettings.IPAddress }}" phpldapadmin-service)
 
+IFS=. read ONE TWO THREE <<<"${LDAP_NAME}"
 
+echo "Seting up LAM container..."
+
+# Sets up lam container
+
+docker run --env LDAP_SERVER=$LDAP_IP \
+	--env LDAP_DOMAIN=$LDAP_NAME \
+	--env LDAP_BASE_DN="dc=$ONE,dc=$TWO,dc=$THREE" \
+	--env ADMIN_USER=cn=admin,${LDAP_BASE_DN} \
+	--detach --name lam-service ldapaccountmanager/lam:stable >/dev/null
+LAM_IP=$(docker inspect -f "{{ .NetworkSettings.IPAddress }}" lam-service)
+
+# Print login details for both phpldapadmin and lam
+
+echo -e "\n====================================================="
 echo "DONE: YOU CAN NOW LOGIN!"
-echo -e "-----------------------------------------------------\n"
-echo "Go to: https://$PHPLDAP_IP"
-IFS=. read ONE TWO THREE <<<"${ldapname}"
+echo -e "=====================================================\n"
+
+echo "Go to: https://$PHPLDAP_IP to access phpLDAPadmin"
 echo "Login DN: cn=admin,dc=$ONE,dc=$TWO,dc=$THREE"
-echo "Password: $adminpw"
-echo -e "\n-----------------------------------------------------"
+echo "Password: $ADMIN_PW"
+echo -e "\n-----------------------------------------------------\n"
+echo "Go to: http://$LAM_IP to access LDAP Account Manager"
+echo "Login user= admin"
+echo "Password: $ADMIN_PW"
+echo -e "\n-----------------------------------------------------\n"
