@@ -4,10 +4,14 @@
 # 	2. phpLdapAdmin https://hub.docker.com/r/osixia/phpldapadmin
 # 	3. Ldap Account Manager https://hub.docker.com/r/ldapaccountmanager/lam
 # Asks for Organization name, ldap domain and admin password through console input
+#
+# ORGANIZATION NAME (whatever you want)
+# LDAP DOMAIN (your domain: my.domain.com)
+# PASSWORD (Same password will be used in all services)
 
-echo -e "\n*****************************************************"
+echo -e "\n*********************************************************"
 echo -e "*      DOCKER LDAP AND PHPLDAPADMIN INSTALLER       *       "
-echo -e "*****************************************************\n"
+echo -e "*********************************************************\n"
 echo -e "We need some settings for server customization:\n"
 read -p "Enter ORGANIZATION NAME: " ORG_NAME
 read -p "Enter LDAP DOMAIN: (domain.example.com): " LDAP_NAME
@@ -65,15 +69,15 @@ LAM_IP=$(docker inspect -f "{{ .NetworkSettings.IPAddress }}" lam-service)
 
 # Print login details for both phpldapadmin and lam
 
-echo -e "\n====================================================="
+echo -e "\n========================================================="
 echo "DONE: YOU CAN NOW LOGIN!"
-echo -e "=====================================================\n"
+echo -e "=========================================================\n"
 
 echo "Go to: https://$PHPLDAP_IP to access phpLDAPadmin"
 echo "Login DN: cn=admin,dc=$ONE,dc=$TWO,dc=$THREE"
 echo "Password: $ADMIN_PW"
-echo -e "\n-----------------------------------------------------\n"
+echo -e "\n---------------------------------------------------------\n"
 echo "Go to: http://$LAM_IP to access LDAP Account Manager"
 echo "Login user= admin"
 echo "Password: $ADMIN_PW"
-echo -e "\n-----------------------------------------------------\n"
+echo -e "\n---------------------------------------------------------\n"
