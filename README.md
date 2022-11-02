@@ -11,5 +11,16 @@ ORGANIZATION NAME (whatever you want)
 LDAP DOMAIN (your domain: my.domain.com)  
 PASSWORD (Same password will be used in all services)  
 
+Simply make slapd.me executable and run it with sudo.
+
+Docker container names are:
+- phpldapadmin-service
+- ldap-service
+- lam-service
+
+To start/stop the services use:
+- docker start phpldapadmin-service ldap-service lam-service
+- docker stop phpldapadmin-service ldap-service lam-service
+
 ![alt text](https://pics.freeicons.io/premium/hand-slap-slapping-pictogram-icon-124063-256.png)
 
