@@ -12,3 +12,4 @@ LDAP DOMAIN (your domain: my.domain.com)
 PASSWORD (Same password will be used in all services)  
 
 ![alt text](https://pics.freeicons.io/premium/hand-slap-slapping-pictogram-icon-124063-256.png)
+
