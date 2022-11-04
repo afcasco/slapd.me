@@ -10,7 +10,7 @@
 # PASSWORD (Same password will be used in all services)
 
 echo -e "\n*********************************************************"
-echo -e "*      DOCKER LDAP AND PHPLDAPADMIN INSTALLER       *       "
+echo -e "*      DOCKER LDAP AND PHPLDAPADMIN INSTALLER           *       "
 echo -e "*********************************************************\n"
 echo -e "We need some settings for server customization:\n"
 read -p "Enter ORGANIZATION NAME: " ORG_NAME
@@ -30,10 +30,10 @@ mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --batch --yes --dearmor -o /etc/apt/keyrings/docker.gpg
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list &>/dev/null
 apt-get update >/dev/null
 echo "Installing docker..."
-apt-get -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin >/dev/null
+apt-get -y install docker-ce docker-ce-cli containerd.io docker-compose-plugin &>/dev/null
 
 echo "Seting up openldap container..."
 
@@ -42,16 +42,16 @@ echo "Seting up openldap container..."
 docker run --env LDAP_ORGANISATION=$ORG_NAME \
 	--env LDAP_DOMAIN=$LDAP_NAME \
 	--env LDAP_ADMIN_PASSWORD=$ADMIN_PW \
-	--name ldap-service --hostname ldap-service --detach osixia/openldap:1.1.8 >/dev/null
+	--name ldap-service --hostname ldap-service --detach osixia/openldap:1.1.8 &>/dev/null
 LDAP_IP=$(docker inspect -f "{{ .NetworkSettings.IPAddress }}" ldap-service)
 
 echo "Seting up phpldapadmin container..."
 
 # Sets up phpldapadmin container
 
-docker run --name phpldapadmin-service --hostname phpldapadmin-service --link ldap-service:$ORG_NAME \
+docker run -p 8085:443 --name phpldapadmin-service --hostname phpldapadmin-service --link ldap-service:$ORG_NAME \
 	--env PHPLDAPADMIN_LDAP_HOSTS=$ORG_NAME \
-	--detach osixia/phpldapadmin:0.9.0 >/dev/null
+	--detach osixia/phpldapadmin:0.9.0 &>/dev/null
 PHPLDAP_IP=$(docker inspect -f "{{ .NetworkSettings.IPAddress }}" phpldapadmin-service)
 
 IFS=. read ONE TWO THREE <<<"${LDAP_NAME}"
@@ -60,11 +60,11 @@ echo "Seting up LAM container..."
 
 # Sets up lam container
 
-docker run --env LDAP_SERVER=$LDAP_IP \
+docker run -p 8086:80 --env LDAP_SERVER=$LDAP_IP \
 	--env LDAP_DOMAIN=$LDAP_NAME \
 	--env LDAP_BASE_DN="dc=$ONE,dc=$TWO,dc=$THREE" \
 	--env ADMIN_USER=cn=admin,${LDAP_BASE_DN} \
-	--detach --name lam-service ldapaccountmanager/lam:stable >/dev/null
+	--detach --name lam-service ldapaccountmanager/lam:stable &>/dev/null
 LAM_IP=$(docker inspect -f "{{ .NetworkSettings.IPAddress }}" lam-service)
 
 # Print login details for both phpldapadmin and lam
@@ -80,5 +80,25 @@ echo -e "\n---------------------------------------------------------\n"
 echo "Go to: http://$LAM_IP to access LDAP Account Manager"
 echo "Login user= admin"
 echo "Password: $ADMIN_PW"
-echo -e "\n---------------------------------------------------------\n"
 
+
+echo -e "\n========================================================="
+echo "Optional downloads"
+echo -e "=========================================================\n"
+read -p "Run portainer for container monitoring (y/n)? " -n 1 -r
+echo    # (optional) move to a new line
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+		echo "No optional downloads selected"
+    exit 1
+fi
+echo "Seting up Portainer..."
+docker volume create portainer_data &>/dev/null
+docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always  \
+-v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest &>/dev/null
+PORTAINER_IP=$(docker inspect -f "{{ .NetworkSettings.IPAddress }}" portainer)
+echo -e "\n---------------------------------------------------------"
+echo "Portainer login: https://localhost:9443"
+echo -e "---------------------------------------------------------\n"
+echo "DO NOT RUN THIS SCRIPT AGAIN"
+echo "You can start/stop the containers using docker cli or portainer web ui\n"
